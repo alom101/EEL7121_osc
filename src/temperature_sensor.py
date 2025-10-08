@@ -24,10 +24,8 @@ class SensorTimeConstant:
 
     def on_pin_change(self, pin):
         if pin():
-            print("UP")
             self.t_up = ticks_us()
         else:
-            print("DOWN")
             self.t_down = ticks_us()
 
     def read(self):

@@ -1,10 +1,12 @@
 from time import ticks_us
 
+
 def execution_time(func, *args, **kwargs):
     t0 = ticks_us()
     func(*args, **kwargs)
     t1 = ticks_us()
     return (t1-t0)/1e6
+
 
 def profile(profiles):
     print(f'{"Name":^30}\t{"exec time (ms)":^15}\t{"max freq (Hz)":^15}')
