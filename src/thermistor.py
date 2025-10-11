@@ -1,4 +1,4 @@
-from temperature_sensor import SensorInterface
+from sensor_temp import SensorInterface
 from math import log
 
 class Thermistor:

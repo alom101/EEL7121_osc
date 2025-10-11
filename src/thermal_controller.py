@@ -1,5 +1,5 @@
 from heater import HeaterInterface
-from temperature_sensor import SensorInterface
+from sensor_temp import SensorInterface
 from strategy import StrategyInterface
 from machine import Timer
 
