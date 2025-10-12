@@ -65,20 +65,17 @@ class SensorTimeConstant(TempSensorInterface):
 
 
 class SensorDS18B20(TempSensorInterface):
-    def __init__(self, pin):
+    def __init__(self, pin, sample_period_ms=1000):
         self.ds = DS18X20(OneWire(Pin(pin)))
         self.rom = self.ds.scan()[0]
         self.last_read = 0
-        self.start_read_timer = Timer()
-        self.finish_read_timer = Timer()
-        self.start_read_timer.init(freq=1, callback=self.start_read)
-
-    def start_read(self, t):
+        self.timer = Timer()
+        self.timer.init(period=sample_period_ms, callback=self._read_onewire)
         self.ds.convert_temp()
-        self.finish_read_timer.init(mode=Timer.ONE_SHOT, period=750, callback=self.finish_read)
 
-    def finish_read(self, t):
+    def _read_onewire(self, t):
         self.last_read = self.ds.read_temp(self.rom)
+        self.ds.convert_temp()
 
     def read(self):
         return self.last_read
