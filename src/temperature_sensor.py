@@ -11,26 +11,12 @@ class TempSensorInterface:
         raise NotImplementedError()
 
 
-class SensorResistanceDivider(TempSensorInterface):
-    def __init__(self, pin, r_series):
-        self.adc = ADC(Pin(pin))
-        self.r_series = r_series
-
-    def read(self):
-        return self.adc_to_resistance(self.adc.read_u16())
-
-    def adc_to_resistance(self, adc_read):
-        return (self.r_series*(2**16-1))/adc_read - self.r_series
-
-    def resistance_to_adc(self, resistance):
-        return (2**16-1)/(resistance/self.r_series + 1)
-
-
-class SensorThermistorRseries(SensorResistanceDivider):
+class SensorThermistorRseries:
     ''' A thermistor in series with a resistor being read by the adc'''
 
     def __init__(self, adc_pin, r_series, A, B):
-        super().__init__(adc_pin, r_series)
+        self.adc = ADC(Pin(adc_pin))
+        self.r_series = r_series
         self.A = A
         self.B = B
 
@@ -39,9 +25,15 @@ class SensorThermistorRseries(SensorResistanceDivider):
 
     def temperature_to_resistance(self, temperature):
         return exp((temperature-self.A)/self.B)
+    
+    def adc_to_resistance(self, adc_read):
+        return (self.r_series*(2**16-1))/adc_read - self.r_series
+
+    def resistance_to_adc(self, resistance):
+        return (2**16-1)/(resistance/self.r_series + 1)
 
     def read(self):
-        return self.resistance_to_temperature(super().read())
+        return self.resistance_to_temperature(self.adc_to_resistance(self.adc.read_u16()))
 
 
 class SensorTimeConstant(TempSensorInterface):

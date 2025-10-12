@@ -25,23 +25,24 @@ class ThermalController:
 if __name__=="__main__":
     from random import getrandbits
     from heater import HeaterPWM
-    from temperature_sensor import SensorTimeConstant, SensorResistanceDivider
+    from temperature_sensor import SensorTimeConstant, SensorThermistorRseries
     from strategy import StrategyOnOff, StrategyP
 
     heater = HeaterPWM(19)
     
     # sensor = SensorTimeConstant(26)
-    sensor = SensorResistanceDivider(26, 1)
+    sensor = SensorThermistorRseries(27, 10_000, A=38.701, B=-8.882)
 
     #strategy = StrategyOnOff()
     strategy = StrategyP(Kp=500)
 
     controller = ThermalController(sensor, heater, strategy)
+    controller.set_target(-45)
 
     from time import sleep
     while True:
         for _ in range(20):
-            print(f'Sensor:{sensor.read()}\tHeater:{heater.read()}\tTarget:{controller.target}')
-            #print(f'Sensor:{sensor.read()}\tHeater:{controller.target}')
+            #print(f'Sensor:{sensor.read():.2f}\tHeater:{heater.read():.2f}\tTarget:{controller.target:.2f}')
+            print(f'Sensor:{sensor.read()}\tHeater:{controller.target}')
             sleep(0.1)
         controller.set_target(getrandbits(16))
