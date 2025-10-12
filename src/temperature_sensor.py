@@ -1,6 +1,8 @@
-from machine import Pin, ADC
+from machine import Pin, ADC, Timer
+from onewire import OneWire
+from ds18x20 import DS18X20
 from time import ticks_us
-from math import log,exp
+from math import log, exp
 
 
 class TempSensorInterface:
@@ -25,7 +27,7 @@ class SensorThermistorRseries:
 
     def temperature_to_resistance(self, temperature):
         return exp((temperature-self.A)/self.B)
-    
+
     def adc_to_resistance(self, adc_read):
         return (self.r_series*(2**16-1))/adc_read - self.r_series
 
@@ -45,7 +47,8 @@ class SensorTimeConstant(TempSensorInterface):
         self.t_up = 0
         self.t_down = 0
         self.t_delta = 0
-        self.input_pin.irq(handler=self.on_pin_change, trigger=Pin.IRQ_RISING|Pin.IRQ_FALLING)
+        self.input_pin.irq(handler=self.on_pin_change,
+                           trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING)
         self.output_pin(True)
 
     def on_pin_change(self, pin):
@@ -61,13 +64,34 @@ class SensorTimeConstant(TempSensorInterface):
         return self.t_delta
 
 
-if __name__=="__main__":
+class SensorDS18B20(TempSensorInterface):
+    def __init__(self, pin):
+        self.ds = DS18X20(OneWire(Pin(pin)))
+        self.rom = self.ds.scan()[0]
+        self.last_read = 0
+        self.start_read_timer = Timer()
+        self.finish_read_timer = Timer()
+        self.start_read_timer.init(freq=1, callback=self.start_read)
+
+    def start_read(self, t):
+        self.ds.convert_temp()
+        self.finish_read_timer.init(mode=Timer.ONE_SHOT, period=750, callback=self.finish_read)
+
+    def finish_read(self, t):
+        self.last_read = self.ds.read_temp(self.rom)
+
+    def read(self):
+        return self.last_read
+
+
+if __name__ == "__main__":
     from time import sleep
 
-    # sensor = SensorResistanceDivider(27, 10_000)
-    sensor = SensorThermistorRseries(27, 10_000, A=38.701, B=-8.882)
+    # sensor = SensorThermistorRseries(27, 10_000, A=38.701, B=-8.882)
+    sensor = SensorDS18B20(4)
 
-    while(True):
+    while (True):
         T = sensor.read()
-        print(f"T:{T}\tR:{sensor.temperature_to_resistance(T)}")
+        #print(f"T:{T}\tR:{sensor.temperature_to_resistance(T)}")
+        print(f"T:{T}")
         sleep(0.2)
