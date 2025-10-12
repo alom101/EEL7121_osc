@@ -1,5 +1,5 @@
 from heater import HeaterInterface
-from sensor_temp import SensorInterface
+from temperature_sensor import TempSensorInterface
 from strategy import StrategyInterface
 from machine import Timer
 
@@ -25,13 +25,13 @@ class ThermalController:
 if __name__=="__main__":
     from random import getrandbits
     from heater import HeaterPWM
-    from temperature_sensor import SensorTimeConstant, SensorADC
+    from temperature_sensor import SensorTimeConstant, SensorResistanceDivider
     from strategy import StrategyOnOff, StrategyP
 
     heater = HeaterPWM(19)
     
     # sensor = SensorTimeConstant(26)
-    sensor = SensorADC(26)
+    sensor = SensorResistanceDivider(26, 1)
 
     #strategy = StrategyOnOff()
     strategy = StrategyP(Kp=500)

@@ -26,9 +26,10 @@ class HeaterPWM(HeaterInterface):
         return self.pwm.duty_u16()
 
     def write(self, value: int):
-        self.pwm.duty_u16(value)
+        self.pwm.duty_u16(int(value))
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     from tests import profile
 
     print("Running tests for heater.py")
@@ -41,7 +42,7 @@ if __name__=="__main__":
             'kwargs': {
                 'value': 10_000
             }
-        },{
+        }, {
             'func_name': "HeaterPWM.read",
             'func': heater.read,
         }
