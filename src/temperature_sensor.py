@@ -1,5 +1,6 @@
 from machine import Pin, ADC
 from time import ticks_us
+from math import log,exp
 
 
 class TempSensorInterface:
@@ -16,9 +17,31 @@ class SensorResistanceDivider(TempSensorInterface):
         self.r_series = r_series
 
     def read(self):
-        v = self.adc.read_u16()/(2**16-1)*3.3
-#        print("RESISTANCE DIVIDER INCOMPLETE!")
-        return v
+        return self.adc_to_resistance(self.adc.read_u16())
+
+    def adc_to_resistance(self, adc_read):
+        return (self.r_series*(2**16-1))/adc_read - self.r_series
+
+    def resistance_to_adc(self, resistance):
+        return (2**16-1)/(resistance/self.r_series + 1)
+
+
+class SensorThermistorRseries(SensorResistanceDivider):
+    ''' A thermistor in series with a resistor being read by the adc'''
+
+    def __init__(self, adc_pin, r_series, A, B):
+        super().__init__(adc_pin, r_series)
+        self.A = A
+        self.B = B
+
+    def resistance_to_temperature(self, resistance):
+        return self.A + self.B*log(resistance)
+
+    def temperature_to_resistance(self, temperature):
+        return exp((temperature-self.A)/self.B)
+
+    def read(self):
+        return self.resistance_to_temperature(super().read())
 
 
 class SensorTimeConstant(TempSensorInterface):
@@ -48,9 +71,11 @@ class SensorTimeConstant(TempSensorInterface):
 
 if __name__=="__main__":
     from time import sleep
-    # s = SensorTimeConstant(input_pin=14, output_pin=15)
-    s = SensorADC(26)
+
+    # sensor = SensorResistanceDivider(27, 10_000)
+    sensor = SensorThermistorRseries(27, 10_000, A=38.701, B=-8.882)
 
     while(True):
-        print(s.read())
-        sleep(1)
+        T = sensor.read()
+        print(f"T:{T}\tR:{sensor.temperature_to_resistance(T)}")
+        sleep(0.2)
