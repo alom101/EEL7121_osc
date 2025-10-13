@@ -3,7 +3,7 @@ from time import sleep, time
 from machine import Pin
 from os import listdir
 
-PERIOD = 10  # seconds
+PERIOD = 1  # seconds
 BASE_NAME = "calibration_data_"
 
 sensor_reference = SensorDS18B20(4)
@@ -21,7 +21,7 @@ print(f"Writing to {file_name}")
 
 # set header
 header = "time\ttemperature\tresistance\n"
-with open("calibration_data.tsv", "at") as file:
+with open(file_name, "at") as file:
     file.write(header)
 print(header, end='')
 

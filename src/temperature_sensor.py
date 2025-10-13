@@ -2,7 +2,8 @@ from machine import Pin, ADC, Timer
 from onewire import OneWire
 from ds18x20 import DS18X20
 from time import ticks_us
-from math import log, exp
+from math import log, exp, sqrt
+import json
 
 
 class TempSensorInterface:
@@ -27,6 +28,37 @@ class SensorThermistorRseries:
 
     def temperature_to_resistance(self, temperature):
         return exp((temperature-self.A)/self.B)
+
+    def adc_to_resistance(self, adc_read):
+        return (self.r_series*(2**16-1))/adc_read - self.r_series
+
+    def resistance_to_adc(self, resistance):
+        return (2**16-1)/(resistance/self.r_series + 1)
+
+    def read(self):
+        return self.resistance_to_temperature(self.adc_to_resistance(self.adc.read_u16()))
+
+
+class SensorThermistorRseriesV2:
+    ''' A thermistor in series with a resistor being read by the adc'''
+
+    def __init__(self, adc_pin, r_series, params_file="thermistor_params.json"):
+        self.adc = ADC(Pin(adc_pin))
+        self.r_series = r_series
+        with open(params_file, "rt") as file:
+            params = json.load(file)
+        self.A = float(params['steinhart-hart']['A'])
+        self.B = float(params['steinhart-hart']['B'])
+        self.C = float(params['steinhart-hart']['C'])
+
+    def resistance_to_temperature(self, resistance):
+        logR = log(resistance)
+        return 1/(self.A + self.B*logR + self.C*(logR)**3)
+
+    def temperature_to_resistance(self, temperature):
+        x = (self.A - 1/temperature)/self.C
+        y = sqrt((self.B/(3*self.C)**3) + x**2/4)
+        return exp((y-x/2)**(1/3) - (y+x/2)**1/3)
 
     def adc_to_resistance(self, adc_read):
         return (self.r_series*(2**16-1))/adc_read - self.r_series
@@ -79,16 +111,20 @@ class SensorDS18B20(TempSensorInterface):
 
     def read(self):
         return self.last_read
+    
 
 
 if __name__ == "__main__":
     from time import sleep
+    
+    # thermistor = SensorThermistorRseriesV2(27, 10_000)
+    thermistor_1 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_v1.json")
+    thermistor_2 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_v2.json")
+    thermistor_3 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_v3.json")
+    ds18b20 = SensorDS18B20(4)
 
-    # sensor = SensorThermistorRseries(27, 10_000, A=38.701, B=-8.882)
-    sensor = SensorDS18B20(4)
-
+    sleep(1)
+    
     while (True):
-        T = sensor.read()
-        #print(f"T:{T}\tR:{sensor.temperature_to_resistance(T)}")
-        print(f"T:{T}")
-        sleep(0.2)
+        print(f"Termistor(v1):{thermistor_1.read():.2f}\tTermistor(v2):{thermistor_2.read():.2f}\tTermistor(v3):{thermistor_3.read():.2f}\tDS18B20:{ds18b20.read():.2f}")
+        sleep(1)
