@@ -8,3 +8,4 @@ Alternativamente,pode-se utilizar somente inversores do CI SN74HC04 ou similar p
 
 A primeira opção foi escolhida, pois o circuito utilzando somente os inverosres bufferizados apresentaram muita ondulação à saída.
 
+![Descrição do Circuito Oscilador](saida_oscilador.jpg)
