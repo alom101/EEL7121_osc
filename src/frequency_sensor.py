@@ -27,7 +27,7 @@ class FreqSensorPIO(FreqSensorInterface):
         self.last_measured_freq = 0
         self.last_interrupt = ticks_us()
         self.count_to = count_to
-        self.count_to_scaled = self.count_to*1000
+        self.count_to_scaled = self.count_to*1e6
         self.pin = Pin(pin, Pin.IN)
         self.state_machine = StateMachine(sm_id, pio_code, freq=sm_freq, in_base=self.pin)
         self.init_state_machine()
