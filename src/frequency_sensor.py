@@ -1,4 +1,5 @@
 from machine import Timer, Pin
+from time import ticks_ms
 from rp2 import asm_pio, PIO, StateMachine
 
 
@@ -8,38 +9,47 @@ class FreqSensorInterface:
         raise NotImplementedError()
 
 
+@asm_pio()
+def pio_code():
+    wrap_target()
+    mov(x, y)
+    label("count")
+    wait(1, pin, 0)
+    wait(0, pin, 0)
+    jmp(x_dec, "count")
+    irq(rel(0))
+    wrap()
+
+
+
 class FreqSensorPIO(FreqSensorInterface):
-    def __init__(self, expected_freq=400_000):
-        self.expected_freq = expected_freq
-        self.last_frequency = 0
-        self.count_to = expected_freq #change later
-        self.state_machine = StateMachine(0, self.pio_code, freq=1_000_000)
+    def __init__(self, pin, count_to=500_000):
+        self.last_measured_freq = 0
+        self.last_interrupt = 0
+        self.count_to = count_to
+        self.count_to_scaled = self.count_to*1000
+        self.pin = Pin(pin, Pin.IN)
+        self.state_machine = StateMachine(0, pio_code, freq=1_000_000, in_base=self.pin)
         self.init_state_machine()
 
     def init_state_machine(self):
         self.state_machine.irq(self.new_measure_callback)
+        # self.state_machine.irq(lambda p: print(ticks_ms()))
         self.state_machine.put(self.count_to)
         self.state_machine.exec("pull()")
-        self.state_machine.exec("mov(osr,y)")
-        self.state_machine.active(True)
-    
-    @asm_pio()
-    def pio_code(self):
-        wrap_target()
-        mov
+        self.state_machine.exec("mov(y, osr)")
+        self.state_machine.active(1)
 
-
-        wrap()
-
-    def new_measure_callback(self):
-    # get value from state_machine
-    # save on self.last_frequency
-
-
+    def new_measure_callback(self, pio):
+        interrupt_time = ticks_ms()
+        delta = interrupt_time - self.last_interrupt
+        self.last_measured_freq = self.count_to_scaled/delta
+        self.last_interrupt = interrupt_time
+        print(f"New frequency value: {self.frequency}, delta={delta}, count:{self.count_to}")
 
     @property
     def frequency(self):
-        return self.last_frequency
+        return self.last_measured_freq
 
 
 
@@ -80,13 +90,18 @@ if __name__ == "__main__":
     def toogle_output(t):
         toggle()
     out_timer = Timer()
-    freq = 10000
+    freq = 1000
     out_timer.init(freq=freq*2, callback=toogle_output)
     
     # fm = FreqSensorPulseCounter(15, measure_freq=1.0)
-    fm = FreqSensorPIO()
+    fm = FreqSensorPIO(15, count_to=10000)
 
-    toggle = out.toggle
-    while True:
-        print(fm.freq)
-        sleep(1)
+    try:
+        while True:
+            sleep(1)
+    except KeyboardInterrupt:
+        fm.state_machine.active(0)
+        out_timer.deinit()
+        print("SM stopped")
+        
+    print('code ended')
