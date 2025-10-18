@@ -121,10 +121,15 @@ if __name__ == "__main__":
     thermistor_1 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_v1.json")
     thermistor_2 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_v2.json")
     thermistor_3 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_v3.json")
+    thermistor_50 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_50º.json")
     ds18b20 = SensorDS18B20(4)
 
     sleep(1)
     
     while (True):
-        print(f"Termistor(v1):{thermistor_1.read():.2f}\tTermistor(v2):{thermistor_2.read():.2f}\tTermistor(v3):{thermistor_3.read():.2f}\tDS18B20:{ds18b20.read():.2f}")
+        #print(f"Termistor(v1):{thermistor_1.read():.2f}\tTermistor(v2):{thermistor_2.read():.2f}\tTermistor(v3):{thermistor_3.read():.2f}\tDS18B20:{ds18b20.read():.2f}")
+        
+        
+        ref = ds18b20.read()
+        print(f"Termistor(v1):{thermistor_50.read()-ref:.2f}\tTermistor(v2):{thermistor_2.read()-ref:.2f}\tTermistor(v3):{thermistor_3.read()-ref:.2f}")
         sleep(1)
