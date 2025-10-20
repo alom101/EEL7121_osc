@@ -86,7 +86,7 @@ if __name__ == "__main__":
     from time import sleep
 
     from tests import Clock
-    clk = Clock(pin=14, freq=500_000, sm_id=1)
+    clk = Clock(pin=14, freq=455_000)
     
     # fm = FreqSensorPulseCounter(15, measure_freq=1.0)
     fm = FreqSensorPIO(15, count_to=100_000)
