@@ -6,6 +6,8 @@ from frequency_sensor import FreqSensorPIO
 from tests import Clock
 from web_server import WebServer
 
+from machine import Pin
+from time import sleep
 
 
 ssid = 'Andrio2'
@@ -26,7 +28,7 @@ UPDATE_FREQ_HZ = 10
 
 temp_sensor = SensorThermistorRseriesV2(THERMISTOR_ADC_PIN, R_SERIES)
 freq_counter = FreqSensorPIO(FREQUENCY_PIN, count_to=100_000)
-heater = HeaterPWM(HEATER_PWM_PIN, pwm_freq=60, initial_value=0)
+heater = HeaterPWM(HEATER_PWM_PIN, pwm_freq=60, initial_value=0, invert=True)
 controller_strategy = StrategyOnOff() 
 fake_oscilator = Clock(FAKE_OSCILATOR_PIN, 455_000)
 
@@ -41,6 +43,11 @@ thermal_controller = ThermalController(
 server = WebServer(temp_sensor, heater, thermal_controller, freq_counter, ssid, password)
 
 
+
+led = Pin("LED", Pin.OUT)
+for _ in range(10):
+    led.toggle()
+    sleep(0.2)
 
 try:
     ip = server.connect()
