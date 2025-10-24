@@ -1,14 +1,18 @@
 import network
 import socket
 from machine import Pin
+from data_history import DataHistory
 
 
 class WebServer:
-    def __init__(self, temp_sensor, heater, thermal_controller, freq_sensor, ssid, password):
+    def __init__(self, temp_sensor, heater_history;DataHistory, temp_history:DataHistory, freq_history:DataHistory, ssid, password):
         self.temp_sensor = temp_sensor
-        self.heater = heater
-        self.thermal_controller = thermal_controller
-        self.frequency_sensor = freq_sensor
+        self.heater_history = heater_history
+        self.temp_history = temp_history
+        self.freq_history = freq_history
+        # self.heater = heater
+        # self.thermal_controller = thermal_controller
+        # self.frequency_sensor = freq_sensor
         self.ssid = ssid
         self.password = password
         self.led = Pin("LED", Pin.OUT)
@@ -105,22 +109,16 @@ class WebServer:
         return connection
 
     def web_page_dashboard(self):
-        
-        temp_atual = self.thermal_controller.sensor.read()
-        temp_alvo = self.thermal_controller.target
-        freq_oscilacao_hz = self.frequency_sensor.frequency
-        potencia = self.thermal_controller.actuator.read()
-        
-        temp_data = self.thermal_controller.temp_history.get_data()
-        
-        
+        temp_atual = self.temp_history.get_last_data()
+        temp_alvo = self.temp_history.get_last_data()
+        freq_oscilacao_hz = self.freq_history.get_last_data()
+        potencia = self.heater_history.get_last_data()
+
         temp_chart_html = self._generate_css_trend_chart(
-            temp_data, 
+            temp_atual, 
             target_val=temp_alvo, 
             color="#0077b6"
         )
-
-        
 
         potencia_perc = (potencia / 65535) * 100
 

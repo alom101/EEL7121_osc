@@ -11,3 +11,9 @@ class DataHistory:
 
     def get_data(self):
         return list(self.history)
+
+    def get_last_data(self):
+        return self.history[-1]
+
+    def get_variation(self):
+        return self.history[-1] - self.history[-2]
