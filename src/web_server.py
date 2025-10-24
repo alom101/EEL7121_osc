@@ -14,6 +14,66 @@ class WebServer:
         self.led = Pin("LED", Pin.OUT)
         self.led.off()
 
+
+    def _generate_css_trend_chart(self, data, target_val, color="#0077b6"):
+        if not data:
+            return "<div style='text-align: center; color: #888;'>Sem histórico para plotar.</div>"
+
+        # Dimensões do gráfico de tendência
+        CHART_HEIGHT = 100 
+        POINT_WIDTH = 15    
+        
+        # Encontra Min/Max para normalizar (centralizar o alvo)
+        all_vals = data + [target_val] # Inclui o alvo para garantir escala
+        min_val = min(all_vals)
+        max_val = max(all_vals)
+        range_val = max_val - min_val
+        
+        # Se o range for muito pequeno, forçamos uma escala
+        if range_val < 0.5: 
+             range_val = 0.5
+             min_val = target_val - 0.25 # Centraliza na temperatura alvo
+             max_val = target_val + 0.25
+
+        # Cria a string HTML/CSS para os pontos
+        chart_points_html = ""
+        for val in data:
+            # 1. Normalização: (Valor Atual - Valor Mínimo) / Range Total
+            normalized_h = (val - min_val) / range_val
+            
+            # 2. Altura CSS: Inverte a altura (Y=0 é o topo)
+            # A altura total do ponto (barrinha) será CHART_HEIGHT * (valor normalizado)
+            height_px = normalized_h * CHART_HEIGHT 
+            
+            # Altura do espaço em branco acima da barra (para que o ponto baixo não toque no topo)
+            empty_space = CHART_HEIGHT - height_px
+            
+            # Cor: Verde se estiver perto do alvo, Laranja se estiver longe
+            point_color = "#38c172" if abs(val - target_val) < 0.5 else color
+            
+            chart_points_html += f"""
+            <div style="display: inline-block; width: {POINT_WIDTH}px; height: {CHART_HEIGHT}px; margin: 0 1px; vertical-align: bottom; position: relative;">
+                <div title='{val:.2f}°C' style='height: {height_px}px; background-color: {point_color}; position: absolute; bottom: 0; left: 0; width: 100%; border-radius: 2px;'></div>
+            </div>
+            """
+
+        # Linha horizontal do Alvo
+        normalized_target_h = (target_val - min_val) / range_val
+        target_y = CHART_HEIGHT - (normalized_target_h * CHART_HEIGHT) # Posição Y da linha (de cima)
+
+        # Monta o contêiner final
+        final_chart = f"""
+        <div style="position: relative; width: 100%; height: {CHART_HEIGHT + 20}px; border: 1px solid #ddd; margin: 15px 0;">
+            <div style="position: absolute; top: {target_y + 10}px; width: 100%; border-top: 1px dashed #dc3545; z-index: 10;"></div>
+            <span style="position: absolute; top: {target_y + 5}px; right: 5px; font-size: 10px; color: #dc3545; z-index: 10;">{target_val:.1f}°C</span>
+            <div style="padding-top: 10px; display: flex; justify-content: space-between; align-items: flex-end; width: 100%; height: {CHART_HEIGHT}px;">
+                {chart_points_html}
+            </div>
+        </div>
+        """
+        return final_chart
+
+
     def connect(self):
         """Configura o Pico W como Ponto de Acesso (AP) e retorna o IP."""
         wlan = network.WLAN(network.AP_IF)
@@ -45,11 +105,22 @@ class WebServer:
         return connection
 
     def web_page_dashboard(self):
-        """Gera o HTML do dashboard com dados em tempo real."""
+        
         temp_atual = self.thermal_controller.sensor.read()
         temp_alvo = self.thermal_controller.target
         freq_oscilacao_hz = self.frequency_sensor.frequency
         potencia = self.thermal_controller.actuator.read()
+        
+        temp_data = self.thermal_controller.temp_history.get_data()
+        
+        
+        temp_chart_html = self._generate_css_trend_chart(
+            temp_data, 
+            target_val=temp_alvo, 
+            color="#0077b6"
+        )
+
+        
 
         potencia_perc = (potencia / 65535) * 100
 
@@ -67,7 +138,8 @@ class WebServer:
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Dashboard CRB455B</title>
-            <meta http-equiv="refresh" content="3"> <style>
+            <meta http-equiv="refresh" content="3">
+            <style>
                 body {{ font-family: Arial, sans-serif; background: #f4f6f9; text-align: center; }}
                 .container {{ margin: 20px auto; max-width: 500px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }}
                 .data-box {{ margin: 15px 0; padding: 15px; border-radius: 8px; font-size: 18px; border: 1px solid #ccc; }}
@@ -92,6 +164,8 @@ class WebServer:
                     Temperatura Atual: <strong>{temp_atual:.2f} °C</strong>
                 </div>
 
+                {temp_chart_html}
+
                 <div class="data-box">
                     Frequência de Oscilação: <strong>{freq_oscilacao_hz / 1000:.3f} kHz</strong>
                 </div>
@@ -100,9 +174,10 @@ class WebServer:
                     Potência do Aquecedor (PWM): <strong>{potencia_perc:.1f} %</strong>
                 </div>
             </div>
+          </div>
         </body>
-        </html>
-        """
+        </html>"""
+        
         return html
 
     def serve(self, connection):

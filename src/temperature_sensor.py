@@ -61,7 +61,7 @@ class SensorThermistorRseriesV2:
         return exp((y-x/2)**(1/3) - (y+x/2)**1/3)
 
     def adc_to_resistance(self, adc_read):
-        return (self.r_series*(2**16-1))/adc_read - self.r_series
+        return (self.r_series*(2**16-1))/max(1,adc_read) - self.r_series
 
     def resistance_to_adc(self, resistance):
         return (2**16-1)/(resistance/self.r_series + 1)

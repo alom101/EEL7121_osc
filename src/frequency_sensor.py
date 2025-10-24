@@ -1,7 +1,7 @@
 from machine import Timer, Pin
 from time import ticks_us
 from rp2 import asm_pio, StateMachine
-
+from data_history import DataHistory
 
 class FreqSensorInterface:
     @property
@@ -23,7 +23,8 @@ def pio_code():
 
 
 class FreqSensorPIO(FreqSensorInterface):
-    def __init__(self, pin, count_to=500_000, sm_id=0, sm_freq=125_000_000):
+    def __init__(self, pin, count_to=500_000, sm_id=0, sm_freq=125_000_000, history_size=40):
+        # adicionar no init -> history_size=40
         self.last_measured_freq = 0
         self.last_interrupt = ticks_us()
         self.count_to = count_to
@@ -31,6 +32,7 @@ class FreqSensorPIO(FreqSensorInterface):
         self.pin = Pin(pin, Pin.IN)
         self.state_machine = StateMachine(sm_id, pio_code, freq=sm_freq, in_base=self.pin)
         self.init_state_machine()
+        self.freq_history = DataHistory(history_size)
 
     def init_state_machine(self):
         self.state_machine.irq(self.new_measure_callback)
@@ -44,6 +46,8 @@ class FreqSensorPIO(FreqSensorInterface):
         delta = interrupt_time - self.last_interrupt
         self.last_measured_freq = self.count_to_scaled/delta
         self.last_interrupt = interrupt_time
+        #self.freq_history.add_point(self.last_measured_freq)
+        
         #print(f"New frequency value: {self.frequency}, delta={delta}, count:{self.count_to}")
         #print(f"New frequency value: {self.frequency}")
 
