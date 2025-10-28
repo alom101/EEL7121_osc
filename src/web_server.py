@@ -5,14 +5,8 @@ from data_history import DataHistory
 
 
 class WebServer:
-    def __init__(self, temp_sensor, heater_history;DataHistory, temp_history:DataHistory, freq_history:DataHistory, ssid, password):
-        self.temp_sensor = temp_sensor
-        self.heater_history = heater_history
-        self.temp_history = temp_history
-        self.freq_history = freq_history
-        # self.heater = heater
-        # self.thermal_controller = thermal_controller
-        # self.frequency_sensor = freq_sensor
+    def __init__(self, data_history: DataHistory, ssid, password):
+        self.data_history = data_history
         self.ssid = ssid
         self.password = password
         self.led = Pin("LED", Pin.OUT)
@@ -109,10 +103,10 @@ class WebServer:
         return connection
 
     def web_page_dashboard(self):
-        temp_atual = self.temp_history.get_last_data()
-        temp_alvo = self.temp_history.get_last_data()
-        freq_oscilacao_hz = self.freq_history.get_last_data()
-        potencia = self.heater_history.get_last_data()
+        temp_atual = self.data_history.temp
+        temp_alvo = self.data_history.target_temp
+        freq_oscilacao_hz = self.data_history.freq
+        potencia = self.data_history.heater
 
         temp_chart_html = self._generate_css_trend_chart(
             temp_atual, 
@@ -185,19 +179,6 @@ class WebServer:
             try:
                 client = connection.accept()[0]
                 request = client.recv(1024).decode()
-
-                if request.split('\r\n')[0].startswith('GET /?target='):
-                    try:
-                        params = request.split('\r\n')[0].split('?')[
-                            1].split('&')
-                        for param in params:
-                            if param.startswith('target='):
-                                new_target = float(param.split('=')[1])
-                                self.thermal_controller.set_target(new_target)
-                                print(f"ALVO ATUALIZADO: {new_target:.1f}°C")
-                                break
-                    except Exception as e:
-                        print(e)
 
                 html = self.web_page_dashboard()
 

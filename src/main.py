@@ -4,6 +4,7 @@ from strategy import StrategyOnOff
 from thermal_controller import ThermalController
 from frequency_sensor import FreqSensorPIO
 from tests import Clock
+from data_history import DataHistory
 from web_server import WebServer
 
 from machine import Pin
@@ -14,9 +15,9 @@ ssid = 'Andrio2'
 password = 'ufsc202502'
 
 
-HEATER_PWM_PIN = 15      
+HEATER_PWM_PIN = 15
 THERMISTOR_ADC_PIN = 27
-FREQUENCY_PIN = 26       
+FREQUENCY_PIN = 26
 FAKE_OSCILATOR_PIN = 22
 
 R_SERIES = 10_000
@@ -40,7 +41,9 @@ thermal_controller = ThermalController(
     update_freq=UPDATE_FREQ_HZ 
 )
 
-server = WebServer(temp_sensor, heater, thermal_controller, freq_counter, ssid, password)
+data_history = DataHistory(freq_counter, temp_sensor, heater, thermal_controller)
+
+server = WebServer(data_history, ssid, password)
 
 
 
