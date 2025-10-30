@@ -22,7 +22,7 @@ class WebServer:
         POINT_WIDTH = 15    
         
         # Encontra Min/Max para normalizar (centralizar o alvo)
-        all_vals = data + [target_val] # Inclui o alvo para garantir escala
+        all_vals = [data] + [target_val] # Inclui o alvo para garantir escala
         min_val = min(all_vals)
         max_val = max(all_vals)
         range_val = max_val - min_val
