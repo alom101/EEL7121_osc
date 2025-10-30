@@ -28,11 +28,11 @@ class DataHistory:
         self.heater = 0
         self.target_temp = 0
         self._timer = Timer()
-
+         
         self.start()
 
     def start(self):
-        self._timer.init(period=self.sample_period, callback=self._read_sensors_callback, hard=False)
+        self._timer.init(period=self._sample_period, callback=self._read_sensors_callback, hard=False)
 
     def stop(self):
         self._timer.deinit()
@@ -44,7 +44,8 @@ class DataHistory:
         self.heater = self._heater.read()
         self.target_temp = self._controller.target
         self._save_data()
+        
 
     def _save_data(self):
-        with open("history.csv", 'at') as file:
+        with open("history.csv", 'a') as file:
             file.write(f"\n{self.timestamp},{self.freq},{self.temp},{self.heater},{self.target_temp}")
