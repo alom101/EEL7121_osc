@@ -5,8 +5,9 @@ from heater import HeaterInterface
 from thermal_controller import ThermalController
 from time import time
 
+
 class DataHistory:
-    
+
     def __init__(
             self,
             frequency_sensor: FreqSensorInterface,
@@ -14,12 +15,12 @@ class DataHistory:
             heater: HeaterInterface,
             controller: ThermalController,
             sample_period=60
-            ):
+    ):
         self._start_time = time()
         self._frequency_sensor = frequency_sensor
         self._temperature_sensor = temperature_sensor
         self._heater = heater
-        self._sample_period = sample_period
+        self._sample_period = sample_period*1000
         self._controller = controller
 
         self.timestamp = 0
@@ -28,11 +29,13 @@ class DataHistory:
         self.heater = 0
         self.target_temp = 0
         self._timer = Timer()
-         
         self.start()
 
     def start(self):
-        self._timer.init(period=self._sample_period, callback=self._read_sensors_callback, hard=False)
+        self._timer.init(period=self._sample_period,
+                         callback=self._read_sensors_callback, hard=False)
+        with open("history.csv", 'a') as file:
+            file.write("timestamp,freq,temp,pwm,target")
 
     def stop(self):
         self._timer.deinit()
@@ -44,8 +47,8 @@ class DataHistory:
         self.heater = self._heater.read()
         self.target_temp = self._controller.target
         self._save_data()
-        
 
     def _save_data(self):
         with open("history.csv", 'a') as file:
-            file.write(f"\n{self.timestamp},{self.freq},{self.temp},{self.heater},{self.target_temp}")
+            file.write(f"\n{self.timestamp},{self.freq},{
+                       self.temp},{self.heater},{self.target_temp}")

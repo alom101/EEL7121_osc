@@ -30,7 +30,7 @@ class SensorThermistorRseries:
         return exp((temperature-self.A)/self.B)
 
     def adc_to_resistance(self, adc_read):
-        return (self.r_series*(2**16-1))/adc_read - self.r_series
+        return (self.r_series*adc_read/(2**16-1)/(1-adc_read/(2**16-1)))
 
     def resistance_to_adc(self, resistance):
         return (2**16-1)/(resistance/self.r_series + 1)
@@ -61,7 +61,7 @@ class SensorThermistorRseriesV2:
         return exp((y-x/2)**(1/3) - (y+x/2)**1/3)
 
     def adc_to_resistance(self, adc_read):
-        return (self.r_series*(2**16-1))/max(1,adc_read) - self.r_series
+        return (self.r_series*(2**16-1))/max(1, adc_read) - self.r_series
 
     def resistance_to_adc(self, resistance):
         return (2**16-1)/(resistance/self.r_series + 1)
@@ -111,25 +111,28 @@ class SensorDS18B20(TempSensorInterface):
 
     def read(self):
         return self.last_read
-    
 
 
 if __name__ == "__main__":
     from time import sleep
-    
+
     # thermistor = SensorThermistorRseriesV2(27, 10_000)
-    thermistor_1 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_v1.json")
-    thermistor_2 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_v2.json")
-    thermistor_3 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_v3.json")
-    thermistor_50 = SensorThermistorRseriesV2(27, 10_000, params_file="thermistor_params_50º.json")
+    thermistor_1 = SensorThermistorRseriesV2(
+        27, 10_000, params_file="thermistor_params_v1.json")
+    thermistor_2 = SensorThermistorRseriesV2(
+        27, 10_000, params_file="thermistor_params_v2.json")
+    thermistor_3 = SensorThermistorRseriesV2(
+        27, 10_000, params_file="thermistor_params_v3.json")
+    thermistor_50 = SensorThermistorRseriesV2(
+        27, 10_000, params_file="thermistor_params_50º.json")
     ds18b20 = SensorDS18B20(4)
 
     sleep(1)
-    
+
     while (True):
-        #print(f"Termistor(v1):{thermistor_1.read():.2f}\tTermistor(v2):{thermistor_2.read():.2f}\tTermistor(v3):{thermistor_3.read():.2f}\tDS18B20:{ds18b20.read():.2f}")
-        
-        
+        # print(f"Termistor(v1):{thermistor_1.read():.2f}\tTermistor(v2):{thermistor_2.read():.2f}\tTermistor(v3):{thermistor_3.read():.2f}\tDS18B20:{ds18b20.read():.2f}")
+
         ref = ds18b20.read()
-        print(f"Termistor(v1):{thermistor_50.read()-ref:.2f}\tTermistor(v2):{thermistor_2.read()-ref:.2f}\tTermistor(v3):{thermistor_3.read()-ref:.2f}")
+        print(f"Termistor(v1):{thermistor_50.read()-ref:.2f}\tTermistor(v2):{
+              thermistor_2.read()-ref:.2f}\tTermistor(v3):{thermistor_3.read()-ref:.2f}")
         sleep(1)

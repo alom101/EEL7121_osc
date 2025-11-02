@@ -2,6 +2,7 @@ from machine import Timer, Pin
 from time import ticks_us
 from rp2 import asm_pio, StateMachine
 
+
 class FreqSensorInterface:
     @property
     def frequency(self):
@@ -20,7 +21,6 @@ def pio_code():
     wrap()
 
 
-
 class FreqSensorPIO(FreqSensorInterface):
     def __init__(self, pin, count_to=500_000, sm_id=0, sm_freq=125_000_000):
         self.last_measured_freq = 0
@@ -28,7 +28,8 @@ class FreqSensorPIO(FreqSensorInterface):
         self.count_to = count_to
         self.count_to_scaled = self.count_to*1e6
         self.pin = Pin(pin, Pin.IN)
-        self.state_machine = StateMachine(sm_id, pio_code, freq=sm_freq, in_base=self.pin)
+        self.state_machine = StateMachine(
+            sm_id, pio_code, freq=sm_freq, in_base=self.pin)
         self.init_state_machine()
 
     def init_state_machine(self):
@@ -43,15 +44,10 @@ class FreqSensorPIO(FreqSensorInterface):
         delta = interrupt_time - self.last_interrupt
         self.last_measured_freq = self.count_to_scaled/delta
         self.last_interrupt = interrupt_time
-        
-        #print(f"New frequency value: {self.frequency}, delta={delta}, count:{self.count_to}")
-        #print(f"New frequency value: {self.frequency}")
 
     @property
     def frequency(self):
         return self.last_measured_freq
-
-
 
 
 class FreqSensorPulseCounter(FreqSensorInterface):
@@ -60,11 +56,12 @@ class FreqSensorPulseCounter(FreqSensorInterface):
         self.pin.irq(handler=self.count_pulse_callback, trigger=Pin.IRQ_RISING)
         self.timer = Timer()
         self.measure_freq = measure_freq
-        self.timer.init(freq=measure_freq, callback=self.finish_callback, hard=False)
+        self.timer.init(freq=measure_freq,
+                        callback=self.finish_callback, hard=False)
         self.pulse_counter = 0
         self.freq = 0
         self.callbacks = []
-        
+
     @property
     def frequency(self):
         return self.freq
@@ -86,19 +83,19 @@ if __name__ == "__main__":
     from time import sleep
 
     from tests import Clock
-    clk = Clock(pin=14, freq=455_000)
-    
+    #clk = Clock(pin=14, freq=455_000)
+
     # fm = FreqSensorPulseCounter(15, measure_freq=1.0)
-    fm = FreqSensorPIO(15, count_to=100_000)
+    fm = FreqSensorPIO(26, count_to=100_000)
 
     try:
         while True:
             sleep(0.2)
-            desvio = fm.frequency-500
-            #print(f"{(fm.frequency-500)*1000} mHz")
+            desvio = fm.frequency-500                   
+            # print(f"{(fm.frequency-500)*1000} mHz")
             print(fm.frequency)
     except KeyboardInterrupt:
         fm.state_machine.active(0)
         print("SM stopped")
-        
+
     print('code ended')

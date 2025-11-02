@@ -12,6 +12,11 @@ class StrategyOnOff(StrategyInterface):
         return 0
 
 
+class StrategyOnOff(StrategyInterface):
+    def update(self, current_value, target):
+        return 0
+
+
 class StrategyP(StrategyInterface):
     def __init__(self, Kp=10):
         self.Kp = Kp
